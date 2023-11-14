@@ -1,0 +1,1 @@
+taskkill /im dproxy.exe /t /f

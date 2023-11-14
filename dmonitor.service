@@ -1,0 +1,19 @@
+# /etc/systemd/system
+# sudo systemctl enable dmonitor   sudo systemctl start dmonitor
+[Unit]
+Description=dmonitor Service
+After=network-online.target
+
+[Service]
+Type=simple
+User=nobody
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/opt/dmonitor
+ExecStart=/opt/dmonitor/dmonitor
+LimitNOFILE=1048576
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

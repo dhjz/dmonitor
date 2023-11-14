@@ -1,0 +1,1 @@
+nohup /opt/dmonitor -p 888 > /opt/dmonitor.log 2>&1 &
