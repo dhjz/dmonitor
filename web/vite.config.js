@@ -30,7 +30,7 @@ export default defineConfig({
     proxy: {
       // https://cn.vitejs.dev/config/#server-proxy
       '/info': {
-        target: 'http://localhost:888',
+        target: 'http://localhost:40001',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/info/, '/info')
       }

@@ -9,6 +9,7 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/process"
 	"runtime"
 	"os"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
+	"sort"
 	// "context"
 	// "os/signal"
 	// "syscall"
@@ -61,7 +62,17 @@ type DiskInfo struct {
 	Usage  float64 `json:"usage"`
 }
 
-
+type Process struct {
+	Pid int32 `json:"pid"`
+	Path string `json:"path"`
+	Mem  float64 `json:"mem"`
+	MemFormat  string `json:"memFormat"`
+}
+//  ProcessList 实现了 sort.Interface 所需的三个方法：Len()、Less() 和 Swap()。这样就可以对 ProcessList 进行排序
+type ProcessList []Process
+func (p ProcessList) Len() int           { return len(p) }
+func (p ProcessList) Less(i, j int) bool { return p[i].Mem > p[j].Mem }
+func (p ProcessList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 type Data struct {
 	CPU    CPUInfo    `json:"cpu"`
@@ -180,6 +191,30 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 获取进程占用内存信息
+	plist, err := process.Processes()
+	if err != nil {
+			panic(err)
+	}
+
+	var processes ProcessList
+	for _, p := range plist {
+			if memInfo, err := p.MemoryInfo(); err == nil {
+					// mem := float64(memInfo.RSS) / 1024 / 1024 // 转换单位为 MB
+					mem := float64(memInfo.RSS)
+					memFormat := formatBytes(memInfo.RSS) 
+					path, _ := p.Exe()
+					processes = append(processes, Process{Pid: p.Pid, Path: path, Mem: mem, MemFormat: memFormat})
+			}
+	}
+
+	sort.Sort(processes)
+	topProcesses := processes[:20]
+	fmt.Println("Rank\tPath\tMemory")
+	for i, p := range topProcesses {
+		fmt.Printf("%d\t%s\t%.2f \t%s\n", i+1, p.Path, p.Mem, p.MemFormat)
+	}
+
 	data := make(map[string]interface{})
 	data["cpu"] = cpuInfo
 	data["mem"] = memoryInfo
@@ -187,6 +222,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	data["sysFiles"] = diskInfos
 	data["info"] = info
 	data["partitions"] = partitions
+	data["top"] = topProcesses
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
