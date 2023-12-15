@@ -65,6 +65,7 @@ type DiskInfo struct {
 type Process struct {
 	Pid int32 `json:"pid"`
 	Path string `json:"path"`
+	Cmd string `json:"cmd"`
 	Mem  float64 `json:"mem"`
 	MemFormat  string `json:"memFormat"`
 }
@@ -204,7 +205,9 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 					mem := float64(memInfo.RSS)
 					memFormat := formatBytes(memInfo.RSS) 
 					path, _ := p.Exe()
-					processes = append(processes, Process{Pid: p.Pid, Path: path, Mem: mem, MemFormat: memFormat})
+					cmdline, _ := p.Cmdline()
+					processes = append(processes, Process{Pid: p.Pid, Path: path, Mem: mem, MemFormat: memFormat, Cmd: cmdline})
+
 			}
 	}
 

@@ -165,26 +165,13 @@
       <el-col :span="24" class="card-box">
         <el-card>
           <template #header><MessageBox style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">内存状态</span></template>
-          <div class="el-table el-table--enable-row-hover el-table--medium">
-            <table cellspacing="0" style="width: 100%;">
-              <thead>
-                <tr>
-                  <th class="el-table__cell el-table__cell is-leaf"><div class="cell">序号</div></th>
-                  <th class="el-table__cell is-leaf"><div class="cell">内存占用大小</div></th>
-                  <th class="el-table__cell is-leaf"><div class="cell">PID</div></th>
-                  <th class="el-table__cell is-leaf"><div class="cell">程序路径</div></th>
-                </tr>
-              </thead>
-              <tbody v-if="server.top">
-                <tr v-for="(top, index) in server.top" :key="index">
-                  <td class="el-table__cell is-leaf"><div class="cell">{{ index + 1 }}</div></td>
-                  <td class="el-table__cell is-leaf"><div class="cell">{{ top.memFormat }}</div></td>
-                  <td class="el-table__cell is-leaf"><div class="cell">{{ top.pid }}</div></td>
-                  <td class="el-table__cell is-leaf"><div class="cell">{{ top.path }}</div></td>
-                 </tr>
-              </tbody>
-            </table>
-          </div>
+          <el-table :data="server.top || []" style="width: 100%">
+            <el-table-column label="序号" type="index" width="80" />
+            <el-table-column label="内存占用大小" prop="memFormat" width="140" />
+            <el-table-column label="PID" prop="pid"  width="140"  />
+            <el-table-column label="程序路径" prop="path"  />
+            <el-table-column label="程序详情" prop="cmd" show-overflow-tooltip />
+          </el-table>
         </el-card>
       </el-col>
     </el-row>
