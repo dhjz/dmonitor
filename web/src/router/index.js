@@ -7,7 +7,12 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('../views/monitor/index.vue')
+      component: () => import('@/views/monitor/index.vue')
+    },
+    {
+      path: '/redis',
+      name: 'redis',
+      component: () => import('@/views/redis/index.vue')
     },
   ]
 })

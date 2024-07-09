@@ -175,21 +175,20 @@
         </el-card>
       </el-col>
     </el-row>
+    <FloatMenu />
   </div>
 </template>
 
 <script setup>
-// import { getServer } from '@/api/monitor/server'
-// import { ref, getCurrentInstance } from 'vue';
-import axios from 'axios'
+import { getInfo } from '@/api/cpu'
 
 const server = ref([])
 const { proxy } = getCurrentInstance()
 
 function getList(isInit) {
-  !isInit && proxy.$modal.loading("正在加载服务监控数据，请稍候！")
+  isInit && proxy.$modal.loading("正在加载服务监控数据，请稍候！")
 
-  axios.get('/info').then(res => {
+  getInfo().then(res => {
   // axios.get('http://localhost:888/info').then(res => {
     console.log(res)
     server.value = res.data
@@ -202,8 +201,8 @@ function fixNum(num) {
 }
 
 setInterval(() => {
-  getList(true)
+  getList()
 }, 5000)
 
-getList();
+getList(true);
 </script>
