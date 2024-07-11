@@ -264,9 +264,12 @@ func formatBytes(bytes uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
+var runPort int
+
 func main() {
 
 	port := flag.Int("p", 40001, "server port")
+	runPort = *port
 	// dir := flag.String("d", "./webapp", "server static dir")
 	flag.Parse()
 	addr := fmt.Sprintf(":%d", *port)
@@ -321,7 +324,12 @@ func main() {
 	// fmt.Println("http server start at port"+addr, ", static dir: "+staticDir)
 	fmt.Printf("***********************app run on http://localhost:%d/ *******************", *port)
 	fmt.Println("")
-	http.ListenAndServe(addr, nil)
+	go func() {
+		openBrowser(fmt.Sprintf("http://localhost:%d/", *port))
+		http.ListenAndServe(addr, nil)
+	}()
+
+	genTaskBarIcon()
 }
 
 /*****  utils    ****/
@@ -351,31 +359,15 @@ func GetJavaInfo() (string, string) {
 		return javaVersionTemp, javaPathTemp
 	}
 
-	cmd := exec.Command("java", "-version")
-	// if runtime.GOOS == "windows" {
-	// 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	// }
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println("无法获取 Java 信息:", err)
-		return "", ""
-	}
-
-	outputStr := string(output)
+	outputStr, _ := getCmdOutput(exec.Command("java", "-version"), true)
 	lines := strings.Split(outputStr, "\n")
 	versionLine := strings.TrimPrefix(strings.TrimSpace(lines[0]), "java version ")
 	javaVersion := strings.Split(versionLine, "\"")[1]
 
-	cmd = exec.Command("which", "java")
-
-	javaPath, err := cmd.Output()
-	if err != nil {
-		fmt.Println("无法获取 Java 安装路径:", err)
-		return javaVersion, ""
-	}
+	javaPath, _ := getCmdOutput(exec.Command("which", "java"), false)
 
 	javaVersionTemp = javaVersion
-	javaPathTemp = strings.TrimSpace(string(javaPath))
+	javaPathTemp = javaPath
 
 	return javaVersionTemp, javaPathTemp
 }
@@ -384,26 +376,34 @@ func GetNodeInfo() (string, string) {
 	if nodeVersionTemp != "" {
 		return nodeVersionTemp, nodePathTemp
 	}
-	cmd := exec.Command("node", "--version")
 
-	output, err := cmd.Output()
-	if err != nil {
-		fmt.Println("无法获取 Node.js 信息:", err)
-		return "", ""
-	}
-
-	nodeVersion := strings.TrimSpace(string(output))
-
-	cmd = exec.Command("which", "node")
-
-	nodePath, err := cmd.Output()
-	if err != nil {
-		fmt.Println("无法获取 Node.js 安装路径:", err)
-		return nodeVersion, ""
-	}
+	nodeVersion, _ := getCmdOutput(exec.Command("node", "--version"), false)
+	nodePath, _ := getCmdOutput(exec.Command("which", "node"), false)
 
 	nodeVersionTemp = nodeVersion
-	nodePathTemp = strings.TrimSpace(string(nodePath))
+	nodePathTemp = nodePath
 
 	return nodeVersionTemp, nodePathTemp
+}
+
+func openBrowser(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default: // Linux 等其他 Unix-like 系统
+		// cmd = "xdg-open"
+		cmd = ""
+	}
+	if cmd == "" {
+		return nil
+	}
+
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
 }
