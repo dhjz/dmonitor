@@ -1,119 +1,82 @@
 <template>
   <div class="app-container">
     <el-row :gutter="10">
-      <el-col :span="8">
+      <el-col :span="7">
         <el-card style="height: calc(100vh - 125px)">
           <template #header>
-            <Collection style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">缓存列表</span>
-            <el-button
-              style="float: right; padding: 3px 0"
-              link
-              type="primary"
-              @click="refreshCacheNames()"
-            >刷新</el-button>
+            <Collection style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">主机列表</span>
+            <el-button style="float: right; padding: 3px 0" link type="primary" @click="refreshCacheNames()" >刷新</el-button>
+            <el-button style="float: right; padding: 3px 0" link type="primary" @click="addFormVisible = true" >添加</el-button>
           </template>
           <el-table
             v-loading="loading"
             :data="cacheNames"
             :height="tableHeight"
             highlight-current-row
-            @row-click="getCacheKeys"
             style="width: 100%"
           >
-            <el-table-column
-              label="序号"
-              width="60"
-              type="index"
-            ></el-table-column>
-
-            <el-table-column
-              label="缓存名称"
-              align="center"
-              prop="cacheName"
-              :show-overflow-tooltip="true"
-              :formatter="nameFormatter"
-            ></el-table-column>
-
-            <el-table-column
-              label="备注"
-              align="center"
-              prop="remark"
-              :show-overflow-tooltip="true"
-            />
-            <el-table-column
-              label="操作"
-              width="60"
-              align="center"
-              class-name="small-padding fixed-width"
-            >
+            <el-table-column label="序号" width="60" type="index" />
+            <el-table-column label="名称" align="center" prop="name" :show-overflow-tooltip="true">
+              <template #default="{ row }">
+                {{ row.host }}:{{ row.port }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" align="center" class-name="small-padding fixed-width" >
               <template #default="scope">
-                <el-button
-                  link
-                  type="primary"
-                  @click="handleClearCacheName(scope.row)"
-                >删除</el-button>
+                <el-button link type="primary" @click="handleLinkCacheName(scope.row)" >连接</el-button>
+                <el-button link type="primary" @click="handleDelCacheName(scope.row)" >删除</el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-card>
       </el-col>
 
-      <el-col :span="8">
+      <el-col :span="7">
         <el-card style="height: calc(100vh - 125px)">
           <template #header>
-            <Key style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">键名列表</span>
+            <Key style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">键名列表(共{{ cacheKeys.length }}个)</span>
             <el-button
               style="float: right; padding: 3px 0"
               link
               type="primary"
               icon="Refresh"
               @click="refreshCacheKeys()"
-            >刷新</el-button>
+              >刷新</el-button>
+            <el-input style="float: right; margin-right: 10px; width: 170px;" size="small" v-model="inputKey" placeholder="键名搜索, 回车确认" />
+            <el-select v-model="dbIndex" filterable placeholder="DB" size="small" style="float: right; margin-right: 10px; width: 100px;" @change="dbChange">
+              <el-option
+                v-for="item in dbOptions"
+                :key="item.value"
+                :label="'DB_' + item.label"
+                :value="item.value"
+              />
+            </el-select>
           </template>
           <el-table
             v-loading="subLoading"
-            :data="cacheKeys"
+            :data="cacheKeysComputed"
             :height="tableHeight"
             highlight-current-row
             @row-click="handleCacheValue"
             style="width: 100%"
           >
-            <el-table-column
-              label="序号"
-              width="60"
-              type="index"
-            ></el-table-column>
-            <el-table-column
-              label="缓存键名"
-              align="center"
-              :show-overflow-tooltip="true"
-              :formatter="keyFormatter"
-            >
-            </el-table-column>
-            <el-table-column
-              label="操作"
-              width="60"
-              align="center"
-              class-name="small-padding fixed-width"
-            >
+            <el-table-column label="序号" width="60" type="index" />
+            <el-table-column label="缓存键名" prop="name" align="center" :show-overflow-tooltip="true" />
+            <!-- <el-table-column label="操作" width="60" align="center" class-name="small-padding fixed-width" >
               <template #default="scope">
-                <el-button
-                  link
-                  type="primary"
-                  @click="handleClearCacheKey(scope.row)"
-                >删除</el-button>
+                <el-button link type="primary" @click="handleClearCacheKey(scope.row)" >删除</el-button>
               </template>
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
         </el-card>
       </el-col>
 
-      <el-col :span="8">
+      <el-col :span="10">
         <el-card :bordered="false" style="height: calc(100vh - 125px)">
           <template #header>
             <Document style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">缓存内容</span>
             <el-button
-              style="float: right; padding: 3px 0"
+              style="float: right; padding: 3px 0; display: none;"
               link
               type="primary"
               icon="Refresh"
@@ -124,22 +87,24 @@
           <el-form :model="cacheForm">
             <el-row :gutter="32">
               <el-col :offset="1" :span="22">
-                <el-form-item label="缓存名称:" prop="cacheName">
-                  <el-input v-model="cacheForm.cacheName" :readOnly="true" />
+                <el-form-item label="缓存键名:" prop="key">
+                  <el-input v-model="cacheForm.key" readonly />
                 </el-form-item>
               </el-col>
               <el-col :offset="1" :span="22">
-                <el-form-item label="缓存键名:" prop="cacheKey">
-                  <el-input v-model="cacheForm.cacheKey" :readOnly="true" />
+                <el-form-item label="缓存时间:" prop="expire">
+                  <el-input v-model="cacheForm.expire" readonly />
                 </el-form-item>
               </el-col>
               <el-col :offset="1" :span="22">
-                <el-form-item label="缓存内容:" prop="cacheValue">
+                <el-form-item label="缓存内容:" prop="value">
+                  <div v-if="computedValue" class="json-box">{{ computedValue }}</div>
                   <el-input
-                    v-model="cacheForm.cacheValue"
+                    v-else
+                    v-model="cacheForm.value"
                     type="textarea"
-                    :rows="8"
-                    :readOnly="true"
+                    :autosize="{ minRows: 8, maxRows: 15 }"
+                    readonly
                   />
                 </el-form-item>
               </el-col>
@@ -149,29 +114,76 @@
       </el-col>
     </el-row>
   </div>
+  <el-dialog v-model="addFormVisible" title="添加主机" width="500">
+    <el-form ref="addFormRef" :model="addForm" :rules="rules">
+      <el-form-item label="主机Host" prop="host">
+        <el-input v-model.trim="addForm.host" autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="主机端口" prop="port">
+        <el-input-number v-model="addForm.port" :min="1" :max="69999" controls-position="right" />
+      </el-form-item>
+      <el-form-item label="主机密码" prop="password">
+        <el-input v-model.trim="addForm.password" autocomplete="off" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button type="primary" @click="addCacheNames">保存</el-button>
+        <el-button @click="addFormVisible = false">取消</el-button>
+      </div>
+    </template>
+  </el-dialog>
   <FloatMenu />
 </template>
 
 <script setup name="CacheList">
-import { listCacheName, listCacheKey, getCacheValue, clearCacheName, clearCacheKey, clearCacheAll } from "@/api/redis";
+import { listKey, getByKey, initRedis, pingRedis, getRedisDbInfo, changeRedisDb } from "@/api/redis";
+import { getStorage, setStorage, formatSecond, encode, decode } from '@/utils';
 
 const { proxy } = getCurrentInstance();
+const REDIS_LIST_KEY = 'REDIS_LIST_KEY'
 
+const dbOptions = ref([]);
 const cacheNames = ref([]);
 const cacheKeys = ref([]);
 const cacheForm = ref({});
-const loading = ref(true);
+const loading = ref(false);
 const subLoading = ref(false);
+const addFormVisible = ref(false);
 const nowCacheName = ref("");
+const inputKey = ref("");
+const dbIndex = ref(null);
 const tableHeight = ref(window.innerHeight - 200);
+
+const { addForm, rules } = toRefs(reactive({
+  addForm: {
+    host: '',
+    post: 6379,
+    password: ''
+  },
+  rules: {
+    host: [{ required: true, message: "主机host不能为空", trigger: "blur" }],
+    port: [{ required: true, message: "主机端口不能为空", trigger: "blur" }],
+  },
+}))
+
+const cacheKeysComputed = computed(() => cacheKeys.value.filter(x => !inputKey.value || x.name.toLowerCase().includes(inputKey.value.toLowerCase())))
+
+const computedValue = computed(() => {
+  if (!cacheForm.value.value) return ''
+  try {
+    return JSON.stringify(JSON.parse(cacheForm.value.value), null, 2)
+  } catch(e) {
+    return ''
+  }
+})
 
 /** 查询缓存名称列表 */
 function getCacheNames() {
-  loading.value = true;
-  listCacheName().then(response => {
-    cacheNames.value = response.data;
-    loading.value = false;
-  });
+  const list = getStorage(REDIS_LIST_KEY)
+  if (list && list.length) {
+    cacheNames.value = list
+  }
 }
 
 /** 刷新缓存名称列表 */
@@ -181,25 +193,66 @@ function refreshCacheNames() {
 }
 
 /** 清理指定名称缓存 */
-function handleClearCacheName(row) {
-  clearCacheName(row.cacheName).then(response => {
-    proxy.$modal.msgSuccess("清理缓存名称[" + row.cacheName + "]成功");
-    getCacheKeys();
+function handleDelCacheName(row) {
+  proxy.$modal.confirm('是否确认删除名称为"' + row.host + '"的数据项?').then(() => {
+    let ind = cacheNames.value.findIndex(x => x.id == row.id)
+    console.log('del', ind);
+    if (ind >= 0) cacheNames.value.splice(ind, 1)
+    setStorage(REDIS_LIST_KEY, cacheNames.value)
+  }).catch(() => {});
+}
+
+function addCacheNames() {
+  proxy.$refs["addFormRef"].validate(valid => {
+    if (valid) {
+      cacheNames.value.push({ 
+        ...addForm.value,
+        password: encode(addForm.value.password),
+        id: Math.random().toString(32).slice(-5) 
+      })
+      setStorage(REDIS_LIST_KEY, cacheNames.value)
+      addFormVisible.value = false
+    }
   });
 }
 
+function handleLinkCacheName(row) {
+  initRedis({ ...row, password: decode(row.password) }).then(res => {
+    if (res.code == 200) {
+      if (res.data) dbIndex.value = res.data + ''
+      getDbInfo()
+      getCacheKeys()
+    } else {
+      proxy.$modal.msgSuccess("连接redis失败");
+    }
+  })
+}
+
+function getDbInfo() {
+  getRedisDbInfo().then(res => {
+    let temp = res.data || {}
+    dbOptions.value = Object.keys(temp).map((key) => ({
+      label: `${key} (${temp[key]})`,
+      value: key
+    }))
+  })
+}
+
 /** 查询缓存键名列表 */
-function getCacheKeys(row) {
-  const cacheName = row !== undefined ? row.cacheName : nowCacheName.value;
-  if (cacheName === "") {
-    return;
-  }
+function getCacheKeys() {
   subLoading.value = true;
-  listCacheKey(cacheName).then(response => {
-    cacheKeys.value = response.data;
+  listKey().then(res => {
+    let temp = (res.data || [])
+    temp.sort()
+    cacheKeys.value = temp.map(x => ({ name: x }));
     subLoading.value = false;
-    nowCacheName.value = cacheName;
-  });
+  })
+}
+
+function dbChange() {
+  changeRedisDb({ index: dbIndex.value }).then(res => {
+    res.data && refreshCacheKeys()
+  })
 }
 
 /** 刷新缓存键名列表 */
@@ -210,6 +263,7 @@ function refreshCacheKeys() {
 
 /** 清理指定键名缓存 */
 function handleClearCacheKey(cacheKey) {
+  console.log(6666);
   clearCacheKey(cacheKey).then(response => {
     proxy.$modal.msgSuccess("清理缓存键名[" + cacheKey + "]成功");
     getCacheKeys();
@@ -227,10 +281,15 @@ function keyFormatter(cacheKey) {
 }
 
 /** 查询缓存内容详细 */
-function handleCacheValue(cacheKey) {
-  getCacheValue(nowCacheName.value, cacheKey).then(response => {
-    cacheForm.value = response.data;
-  });
+function handleCacheValue(row) {
+  getByKey({ key: row.name }).then(res => {
+    if (res.data && res.data.value) {
+      res.data.expire = res.data.expire == 0 ? '永久' : (formatSecond(res.data.expire))
+      cacheForm.value = res.data
+    } else {
+      cacheForm.value = {}
+    }
+  })
 }
 
 /** 清理全部缓存 */
@@ -242,3 +301,19 @@ function handleClearCacheAll() {
 
 getCacheNames();
 </script>
+
+<style scoped>
+  .el-textarea {
+    word-break: break-all;
+  }
+  .json-box {
+    white-space: pre;
+    word-break: break-all;
+    max-height: calc(100vh - 320px);
+    width: 100%;
+    overflow: auto;
+    border: 1px solid #eee;
+    padding: 4px;
+    line-height: 1.4;
+  }
+</style>

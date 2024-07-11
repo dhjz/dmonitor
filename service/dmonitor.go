@@ -1,8 +1,8 @@
 package main
 
 import (
+	"dmonitor/server/base"
 	"dmonitor/server/redis"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -247,7 +247,8 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	data["top"] = topProcesses
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	// json.NewEncoder(w).Encode(data)
+	base.R(w).Ok(data)
 }
 
 func formatBytes(bytes uint64) string {
@@ -318,7 +319,7 @@ func main() {
 	*/
 
 	// fmt.Println("http server start at port"+addr, ", static dir: "+staticDir)
-	fmt.Printf("***********************app run on http://localhost:%d/web/ *******************", *port)
+	fmt.Printf("***********************app run on http://localhost:%d/ *******************", *port)
 	fmt.Println("")
 	http.ListenAndServe(addr, nil)
 }

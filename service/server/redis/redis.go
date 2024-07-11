@@ -2,10 +2,13 @@ package redis
 
 import (
 	// pointController "express/server/business/point/controller"
+	"context"
 	"dmonitor/server/base"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func HandleApi(w http.ResponseWriter, r *http.Request) {
@@ -18,18 +21,18 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("redis HandleApi path:", path)
 
 	switch {
-	case strings.Contains(path, "/listCacheName"):
-		listCacheName(w, r)
-	case strings.Contains(path, "/listCacheKey"):
-		listCacheKey(w, r)
-	case strings.Contains(path, "/getCacheValue"):
-		getCacheValue(w, r)
-	case strings.Contains(path, "/clearCacheName"):
-		clearCacheName(w, r)
-	case strings.Contains(path, "/clearCacheKey"):
-		clearCacheKey(w, r)
-	case strings.Contains(path, "/clearCacheAll"):
-		clearCacheAll(w, r)
+	case strings.Contains(path, "/getRedisDbInfo"):
+		getRedisDbInfo(w, r)
+	case strings.Contains(path, "/changeRedisDb"):
+		changeRedisDb(w, r)
+	case strings.Contains(path, "/pingRedis"):
+		pingRedis(w, r)
+	case strings.Contains(path, "/initRedis"):
+		initRedis(w, r)
+	case strings.Contains(path, "/listKey"):
+		listKey(w, r)
+	case strings.Contains(path, "/getByKey"):
+		getByKey(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -39,39 +42,97 @@ func HandleApi(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func listCacheName(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
-	// list = make([]*pointEntity.ExpressPoint, 0, 2)
-	base.R(w).Ok(result)
-
+func changeRedisDb(w http.ResponseWriter, r *http.Request) {
+	index, err := strconv.Atoi(r.URL.Query().Get("index"))
+	if err != nil {
+		base.R(w).FailMsg("请传入正确的DB库")
+		return
+	}
+	base.R(w).Ok(changeDb(index))
 }
 
-func listCacheKey(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
-
-	base.R(w).Ok(result)
+func getRedisDbInfo(w http.ResponseWriter, r *http.Request) {
+	base.R(w).Ok(getDbInfo())
 }
 
-func getCacheValue(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
+func pingRedis(w http.ResponseWriter, r *http.Request) {
+	host := r.URL.Query().Get("host")
+	password := r.URL.Query().Get("password")
+	port, err := strconv.Atoi(r.URL.Query().Get("port"))
+	if err != nil {
+		base.R(w).FailMsg("请传入正确的端口号")
+		return
+	}
 
-	base.R(w).Ok(result)
-}
-
-func clearCacheName(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
-
-	base.R(w).Ok(result)
-}
-
-func clearCacheKey(w http.ResponseWriter, r *http.Request) {
-	result := make(map[string]interface{})
+	result := pingDb(host, port, password)
 
 	base.R(w).Ok(result)
 }
 
-func clearCacheAll(w http.ResponseWriter, r *http.Request) {
+func initRedis(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	host := r.URL.Query().Get("host")
+	password := r.URL.Query().Get("password")
+	port, err := strconv.Atoi(r.URL.Query().Get("port"))
+	if err != nil {
+		base.R(w).FailMsg("请传入正确的端口号")
+		return
+	}
+	fmt.Printf("initRedis parameter: %s:%d, pwd: %s", host, port, password)
+	createDb(host, port, password)
+
+	pong, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		fmt.Println("连接Redis出错")
+		base.R(w).FailMsg("连接Redis出错")
+		return
+	}
+	fmt.Println("Ping Redis success: ", pong)
+	base.R(w).Ok(currDb)
+}
+
+func listKey(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	keys, err := rdb.Keys(ctx, "*").Result()
+	if err != nil {
+		base.R(w).Ok([]string{})
+		return
+	}
+	fmt.Println("Keys in db0 len: ", len(keys))
+	base.R(w).Ok(keys)
+
+}
+
+func getByKey(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("key")
+	ctx := context.Background()
+	val, err := rdb.Get(ctx, key).Result()
+	if err != nil {
+		base.R(w).Ok("")
+		return
+	}
+	fmt.Println(val)
+	var exp int = 0
+	// 获取key的有效期（TTL）
+	ttl, err := rdb.TTL(ctx, key).Result()
+	if err != nil {
+		panic(err)
+	} else {
+		if ttl == time.Duration(-2) {
+			fmt.Printf("Key %s does not exist or has no associated expiration\n", key)
+		} else if ttl == time.Duration(-1) {
+			fmt.Printf("Key %s exists but has no expiration set\n", key)
+			exp = 0
+		} else {
+			fmt.Printf("Key %s -> TTL: %s\n", key, ttl)
+			exp = int(ttl.Seconds())
+		}
+	}
+
 	result := make(map[string]interface{})
+	result["value"] = val
+	result["expire"] = exp
+	result["key"] = key
 
 	base.R(w).Ok(result)
 }

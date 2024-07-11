@@ -24,7 +24,6 @@ function goPage(path) {
   right: 10px;
   top: 10px;
   z-index: 999;
-  display: none;
 }
 .float-menu:hover .hide {
   display: block !important;

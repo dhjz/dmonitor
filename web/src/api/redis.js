@@ -1,49 +1,49 @@
 import request from '@/utils/request'
 
-// [{cacheName: "login_tokens", cacheKey: "", cacheValue: "", remark: "用户信息"}]
-export const listCacheName = () => {
+export const listKey = () => {
   return request({
-    url: '/redis/listCacheName',
+    url: '/redis/listKey',
     method: 'get'
   })
 }
 
-// ["dsfadfd"]
-export const listCacheKey = () => {
+export const getByKey = (params) => {
   return request({
-    url: '/redis/listCacheKey',
-    method: 'get'
+    url: '/redis/getByKey',
+    method: 'get',
+    params
   })
 }
 
-// {cacheKey: "43d0e2cb-5de4-",cacheName: "login_tokens",cacheValue: "cser@df4ae5e",remark: ""}
-export const getCacheValue = () => {
+// host password port
+export const initRedis = (params) => {
   return request({
-    url: '/redis/getCacheValue',
-    method: 'get'
+    url: '/redis/initRedis',
+    method: 'get',
+    params
   })
 }
 
-
-export const clearCacheName = () => {
+export const pingRedis = (params) => {
   return request({
-    url: '/redis/clearCacheName',
-    method: 'get'
+    url: '/redis/pingRedis',
+    method: 'get',
+    params
   })
 }
 
-
-export const clearCacheKey = () => {
+export const getRedisDbInfo = (params) => {
   return request({
-    url: '/redis/clearCacheKey',
-    method: 'get'
+    url: '/redis/getRedisDbInfo',
+    method: 'get',
+    params
   })
 }
 
-
-export const clearCacheAll = () => {
+export const changeRedisDb = (params) => {
   return request({
-    url: '/redis/clearCacheAll',
-    method: 'get'
+    url: '/redis/changeRedisDb',
+    method: 'get',
+    params
   })
 }
