@@ -5,8 +5,11 @@
         <el-card style="height: calc(100vh - 125px)">
           <template #header>
             <Collection style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">主机列表</span>
-            <el-button style="float: right; padding: 3px 0" link type="primary" @click="refreshCacheNames()" >刷新</el-button>
-            <el-button style="float: right; padding: 3px 0" link type="primary" @click="addFormVisible = true" >添加</el-button>
+            <el-button style="float: right; padding: 3px 0;margin-left: 6px;" link type="primary" @click="refreshCacheNames()" >刷新</el-button>
+            <el-button style="float: right; padding: 3px 0;margin-left: 6px;" link type="primary" @click="addFormVisible = true" >添加</el-button>
+            <span style="float: right; margin-right: 50px; font-size: 12px;  padding: 5px 0;" v-show="redisInfo && redisInfo.version">
+              当前连接信息: 版本: {{ redisInfo.version || '' }}, 模式: {{ redisInfo.mode || '' }}
+            </span>
           </template>
           <el-table
             v-loading="loading"
@@ -153,6 +156,7 @@ const addFormVisible = ref(false);
 const nowCacheName = ref("");
 const inputKey = ref("");
 const dbIndex = ref(null);
+const redisInfo = ref({})
 const tableHeight = ref(window.innerHeight - 200);
 
 const { addForm, rules } = toRefs(reactive({
@@ -189,7 +193,7 @@ function getCacheNames() {
 /** 刷新缓存名称列表 */
 function refreshCacheNames() {
   getCacheNames();
-  proxy.$modal.msgSuccess("刷新缓存列表成功");
+  proxy.$modal.msgSuccess("刷新主机列表成功");
 }
 
 /** 清理指定名称缓存 */
@@ -219,11 +223,15 @@ function addCacheNames() {
 function handleLinkCacheName(row) {
   initRedis({ ...row, password: decode(row.password) }).then(res => {
     if (res.code == 200) {
-      if (res.data) dbIndex.value = res.data + ''
+      if (res.data) {
+        dbIndex.value = res.data.currDb + ''
+        redisInfo.value = res.data.redisInfo || {}
+      }
       getDbInfo()
       getCacheKeys()
     } else {
       proxy.$modal.msgSuccess("连接redis失败");
+      redisInfo.value = {}
     }
   })
 }

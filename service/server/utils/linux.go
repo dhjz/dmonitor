@@ -1,6 +1,6 @@
 //go:build linux
 
-package main
+package utils
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func getCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
+func GetCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	var output []byte
 	var err error
 	if isCombine {
@@ -24,6 +24,6 @@ func getCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func genTaskBarIcon() {
+func GenTaskBarIcon() {
 
 }

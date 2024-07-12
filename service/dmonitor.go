@@ -3,18 +3,15 @@ package main
 import (
 	"dmonitor/server/base"
 	"dmonitor/server/redis"
+	"dmonitor/server/utils"
 	"flag"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"sort"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -90,11 +87,6 @@ type Data struct {
 	Memory MemoryInfo `json:"memory"`
 }
 
-var javaVersionTemp string
-var javaPathTemp string
-var nodeVersionTemp string
-var nodePathTemp string
-
 func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")             //允许访问所有域
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type") //header的类型
@@ -142,9 +134,9 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取系统信息
-	javaVersion, javaPath := GetJavaInfo()
-	nodeVersion, nodePath := GetNodeInfo()
-	startTime, uptime := GetOpenTime()
+	javaVersion, javaPath := utils.GetJavaInfo()
+	nodeVersion, nodePath := utils.GetNodeInfo()
+	startTime, uptime := utils.GetOpenTime()
 	sysInfo := SysInfo{
 		// ComputerIp: os.Hostname(),
 		OsArch:      runtime.GOARCH,
@@ -202,9 +194,9 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 				DirName:     partition.Device,
 				SysTypeName: partition.Fstype,
 				TypeName:    partition.Mountpoint,
-				Total:       formatBytes(usage.Total),
-				Used:        formatBytes(usage.Used),
-				Free:        formatBytes(usage.Free),
+				Total:       utils.FormatBytes(usage.Total),
+				Used:        utils.FormatBytes(usage.Used),
+				Free:        utils.FormatBytes(usage.Free),
 				Usage:       float64(usage.Used) / float64(usage.Total) * 100,
 			}
 			diskInfos = append(diskInfos, diskInfo)
@@ -222,7 +214,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		if memInfo, err := p.MemoryInfo(); err == nil {
 			// mem := float64(memInfo.RSS) / 1024 / 1024 // 转换单位为 MB
 			mem := float64(memInfo.RSS)
-			memFormat := formatBytes(memInfo.RSS)
+			memFormat := utils.FormatBytes(memInfo.RSS)
 			path, _ := p.Exe()
 			cmdline, _ := p.Cmdline()
 			processes = append(processes, Process{Pid: p.Pid, Path: path, Mem: mem, MemFormat: memFormat, Cmd: cmdline})
@@ -251,25 +243,10 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	base.R(w).Ok(data)
 }
 
-func formatBytes(bytes uint64) string {
-	const unit = 1024
-	if bytes < unit {
-		return strconv.FormatUint(bytes, 10) + " B"
-	}
-	div, exp := uint64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
-}
-
-var runPort int
-
 func main() {
 
 	port := flag.Int("p", 40001, "server port")
-	runPort = *port
+	base.RunPort = *port
 	// dir := flag.String("d", "./webapp", "server static dir")
 	flag.Parse()
 	addr := fmt.Sprintf(":%d", *port)
@@ -324,86 +301,11 @@ func main() {
 	// fmt.Println("http server start at port"+addr, ", static dir: "+staticDir)
 	fmt.Printf("***********************app run on http://localhost:%d/ *******************", *port)
 	fmt.Println("")
+
 	go func() {
-		openBrowser(fmt.Sprintf("http://localhost:%d/", *port))
+		utils.OpenBrowser(fmt.Sprintf("http://localhost:%d/", *port))
 		http.ListenAndServe(addr, nil)
 	}()
 
-	genTaskBarIcon()
-}
-
-/*****  utils    ****/
-func GetOpenTime() (string, string) {
-	bootTime, err := host.BootTime()
-	if err != nil {
-		fmt.Println("无法获取开机时间:", err)
-		return "", ""
-	}
-
-	startTime := time.Unix(int64(bootTime), 0)
-	uptime := time.Since(startTime)
-
-	return startTime.Format("2006-01-02 15:04:05"), FormatDuration(uptime)
-}
-
-func FormatDuration(duration time.Duration) string {
-	days := int(duration.Hours() / 24)
-	hours := int(duration.Hours()) % 24
-	minutes := int(duration.Minutes()) % 60
-
-	return fmt.Sprintf("%d天%d小时%d分钟", days, hours, minutes)
-}
-
-func GetJavaInfo() (string, string) {
-	if javaVersionTemp != "" {
-		return javaVersionTemp, javaPathTemp
-	}
-
-	outputStr, _ := getCmdOutput(exec.Command("java", "-version"), true)
-	lines := strings.Split(outputStr, "\n")
-	versionLine := strings.TrimPrefix(strings.TrimSpace(lines[0]), "java version ")
-	javaVersion := strings.Split(versionLine, "\"")[1]
-
-	javaPath, _ := getCmdOutput(exec.Command("which", "java"), false)
-
-	javaVersionTemp = javaVersion
-	javaPathTemp = javaPath
-
-	return javaVersionTemp, javaPathTemp
-}
-
-func GetNodeInfo() (string, string) {
-	if nodeVersionTemp != "" {
-		return nodeVersionTemp, nodePathTemp
-	}
-
-	nodeVersion, _ := getCmdOutput(exec.Command("node", "--version"), false)
-	nodePath, _ := getCmdOutput(exec.Command("which", "node"), false)
-
-	nodeVersionTemp = nodeVersion
-	nodePathTemp = nodePath
-
-	return nodeVersionTemp, nodePathTemp
-}
-
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // Linux 等其他 Unix-like 系统
-		// cmd = "xdg-open"
-		cmd = ""
-	}
-	if cmd == "" {
-		return nil
-	}
-
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
+	utils.GenTaskBarIcon()
 }

@@ -1,8 +1,9 @@
 //go:build windows
 
-package main
+package utils
 
 import (
+	"dmonitor/server/base"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -12,7 +13,7 @@ import (
 	"github.com/getlantern/systray"
 )
 
-func getCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
+func GetCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	// windows不弹出黑色命令行窗口
 	if runtime.GOOS == "windows" {
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
@@ -32,7 +33,7 @@ func getCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func genTaskBarIcon() {
+func GenTaskBarIcon() {
 	if runtime.GOOS == "windows" {
 		systray.Run(onReady, onExit)
 	}
@@ -50,7 +51,7 @@ func onReady() {
 		for {
 			select {
 			case <-menuOpen.ClickedCh:
-				openBrowser(fmt.Sprintf("http://localhost:%d/", runPort))
+				OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
 			case <-menuQuit.ClickedCh:
 				systray.Quit()
 			}

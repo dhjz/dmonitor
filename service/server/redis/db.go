@@ -103,3 +103,27 @@ func getDbInfo() map[int]int {
 	return dbInfo
 
 }
+
+func getRedisInfo() map[string]interface{} {
+	ctx := context.Background()
+	result := make(map[string]interface{})
+	infoCmd := rdb.Info(ctx)
+	info, err := infoCmd.Result()
+	if err != nil {
+		fmt.Println("Error getting Redis info:", err)
+		return nil
+	}
+	fmt.Println("Redis Info:", info)
+	result["info"] = info
+
+	for _, line := range strings.Split(info, "\r\n") {
+		if strings.HasPrefix(line, "redis_version:") {
+			result["version"] = strings.TrimPrefix(line, "redis_version:")
+		}
+		if strings.HasPrefix(line, "redis_mode:") {
+			result["mode"] = strings.TrimPrefix(line, "redis_mode:")
+		}
+	}
+
+	return result
+}
