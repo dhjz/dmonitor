@@ -2,6 +2,7 @@
 ::go build -ldflags "-s -w -H=windowsgui"
 :: go build -o ddns.exe
 ::cp -Force -r ../web/dist/* ./webapp/
+rmdir /S /Q .\webapp
 xcopy /E /Y "..\web\dist\*" ".\webapp\"
 
 go env -w GOOS=linux
