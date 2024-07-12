@@ -37,7 +37,7 @@ func createDb(host string, port int, pwd string) *redis.Client {
 	return rdb
 }
 
-func pingDb(host string, port int, pwd string) bool {
+func pingDb(host string, port int, pwd string) map[string]interface{} {
 	ctx := context.Background()
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", host, port),
@@ -51,11 +51,12 @@ func pingDb(host string, port int, pwd string) bool {
 	pong, err := client.Ping(ctx).Result()
 	if err != nil {
 		fmt.Println("Ping Redis fail: ", err)
-		return false
+		return nil
 	}
 
 	fmt.Println("Ping Redis success: ", pong)
-	return true
+	result := getRedisInfo(client)
+	return result
 }
 
 func changeDb(ind int) bool {
@@ -104,10 +105,10 @@ func getDbInfo() map[int]int {
 
 }
 
-func getRedisInfo() map[string]interface{} {
+func getRedisInfo(db *redis.Client) map[string]interface{} {
 	ctx := context.Background()
 	result := make(map[string]interface{})
-	infoCmd := rdb.Info(ctx)
+	infoCmd := db.Info(ctx)
 	info, err := infoCmd.Result()
 	if err != nil {
 		fmt.Println("Error getting Redis info:", err)

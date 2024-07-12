@@ -45,7 +45,7 @@
               icon="Refresh"
               @click="refreshCacheKeys()"
               >刷新</el-button>
-            <el-input style="float: right; margin-right: 10px; width: 170px;" size="small" v-model="inputKey" placeholder="键名搜索, 回车确认" />
+            <el-input style="float: right; margin-right: 10px; width: 170px;" size="small" v-model="inputKey" placeholder="键名搜索, 回车确认" clearable />
             <el-select v-model="dbIndex" filterable placeholder="DB" size="small" style="float: right; margin-right: 10px; width: 100px;" @change="dbChange">
               <el-option
                 v-for="item in dbOptions"
@@ -120,17 +120,18 @@
   <el-dialog v-model="addFormVisible" title="添加主机" width="500">
     <el-form ref="addFormRef" :model="addForm" :rules="rules">
       <el-form-item label="主机Host" prop="host">
-        <el-input v-model.trim="addForm.host" autocomplete="off" />
+        <el-input v-model.trim="addForm.host" autocomplete="off" clearable />
       </el-form-item>
       <el-form-item label="主机端口" prop="port">
-        <el-input-number v-model="addForm.port" :min="1" :max="69999" controls-position="right" />
+        <el-input-number v-model="addForm.port" :min="1" :max="69999" clearable controls-position="right" />
       </el-form-item>
       <el-form-item label="主机密码" prop="password">
-        <el-input v-model.trim="addForm.password" autocomplete="off" />
+        <el-input v-model.trim="addForm.password" autocomplete="off" type="password" clearable show-password />
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
+        <el-button @click="testRedis" style="float: left;" v-loading="testLoading" :disabled="testLoading">测试连接</el-button>
         <el-button type="primary" @click="addCacheNames">保存</el-button>
         <el-button @click="addFormVisible = false">取消</el-button>
       </div>
@@ -153,6 +154,7 @@ const cacheForm = ref({});
 const loading = ref(false);
 const subLoading = ref(false);
 const addFormVisible = ref(false);
+const testLoading = ref(false);
 const nowCacheName = ref("");
 const inputKey = ref("");
 const dbIndex = ref(null);
@@ -162,7 +164,7 @@ const tableHeight = ref(window.innerHeight - 200);
 const { addForm, rules } = toRefs(reactive({
   addForm: {
     host: '',
-    post: 6379,
+    port: 6379,
     password: ''
   },
   rules: {
@@ -216,8 +218,20 @@ function addCacheNames() {
       })
       setStorage(REDIS_LIST_KEY, cacheNames.value)
       addFormVisible.value = false
+      addForm.value = { host: '', post: 6379, password: '' }
     }
   });
+}
+
+function testRedis() {
+  testLoading.value = true
+  pingRedis({ ...addForm.value }).then(res => {
+    if (res.data && res.data.version) {
+      proxy.$modal.msgSuccess(`连接redis成功, 版本: ${res.data.version}, 模式: ${res.data.mode}`)
+    } else {
+      proxy.$modal.msgError("连接redis失败");
+    }
+  }).finally(() => (testLoading.value = false))
 }
 
 function handleLinkCacheName(row) {
@@ -230,7 +244,7 @@ function handleLinkCacheName(row) {
       getDbInfo()
       getCacheKeys()
     } else {
-      proxy.$modal.msgSuccess("连接redis失败");
+      proxy.$modal.msgError("连接redis失败");
       redisInfo.value = {}
     }
   })

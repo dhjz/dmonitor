@@ -64,9 +64,7 @@ func pingRedis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := pingDb(host, port, password)
-
-	base.R(w).Ok(result)
+	base.R(w).Ok(pingDb(host, port, password))
 }
 
 func initRedis(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +88,7 @@ func initRedis(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("Ping Redis success: ", pong)
 	result["currDb"] = currDb
-	result["redisInfo"] = getRedisInfo()
+	result["redisInfo"] = getRedisInfo(rdb)
 	base.R(w).Ok(result)
 }
 
