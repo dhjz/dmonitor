@@ -1,4 +1,4 @@
-## 服务器监控软件
+## 服务器监控软件  轻量redis客户端
 ### 开发语言
 - 前端: vue3 + vite + element-plus
 - 后端: go
