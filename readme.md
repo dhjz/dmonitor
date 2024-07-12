@@ -26,3 +26,4 @@
 ### 其他说明
 - 页面效果图见`appimg`目录
 - ![alt 监控图](https://gcore.jsdelivr.net/gh/dhjz/dmonitor@master/appimg/app.jpg)
+- ![alt redis连接图](https://gcore.jsdelivr.net/gh/dhjz/dmonitor@master/appimg/redis.jpg)
