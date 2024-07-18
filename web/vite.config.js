@@ -29,10 +29,10 @@ export default defineConfig({
     open: false,
     proxy: {
       // https://cn.vitejs.dev/config/#server-proxy
-      '/api': {
+      '/monitor-api': {
         target: 'http://localhost:40001',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, '/api')
+        rewrite: (p) => p.replace(/^\/monitor-api/, '/monitor-api')
       }
     }
   },

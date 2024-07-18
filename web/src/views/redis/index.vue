@@ -37,15 +37,15 @@
       <el-col :span="7">
         <el-card style="height: calc(100vh - 125px)">
           <template #header>
-            <Key style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">键名列表(共{{ cacheKeys.length }}个)</span>
+            <Key style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">键名列表({{ cacheKeys.length }}个)</span>
             <el-button
               style="float: right; padding: 3px 0"
               link
               type="primary"
               icon="Refresh"
-              @click="refreshCacheKeys()"
+              @click="refreshCacheKeys"
               >刷新</el-button>
-            <el-input style="float: right; margin-right: 10px; width: 170px;" size="small" v-model="inputKey" placeholder="键名搜索, 回车确认" clearable />
+            <el-input style="float: right; margin-right: 10px; width: 170px;" size="small" v-model="inputKey" placeholder="键名搜索, 回车确认" @keyup.enter="getCacheKeys" clearable />
             <el-select v-model="dbIndex" filterable placeholder="DB" size="small" style="float: right; margin-right: 10px; width: 100px;" @change="dbChange">
               <el-option
                 v-for="item in dbOptions"
@@ -57,7 +57,7 @@
           </template>
           <el-table
             v-loading="subLoading"
-            :data="cacheKeysComputed"
+            :data="cacheKeys"
             :height="tableHeight"
             highlight-current-row
             @row-click="handleCacheValue"
@@ -173,7 +173,7 @@ const { addForm, rules } = toRefs(reactive({
   },
 }))
 
-const cacheKeysComputed = computed(() => cacheKeys.value.filter(x => !inputKey.value || x.name.toLowerCase().includes(inputKey.value.toLowerCase())))
+// const cacheKeysComputed = computed(() => cacheKeys.value.filter(x => !inputKey.value || x.name.toLowerCase().includes(inputKey.value.toLowerCase())))
 
 const computedValue = computed(() => {
   if (!cacheForm.value.value) return ''
@@ -263,7 +263,7 @@ function getDbInfo() {
 /** 查询缓存键名列表 */
 function getCacheKeys() {
   subLoading.value = true;
-  listKey().then(res => {
+  listKey({ keyword: inputKey.value || '' }).then(res => {
     let temp = (res.data || [])
     temp.sort()
     cacheKeys.value = temp.map(x => ({ name: x }));

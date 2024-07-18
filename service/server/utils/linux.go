@@ -24,6 +24,10 @@ func GetCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+func OpenBrowser(url string) error {
+	return nil
+}
+
 func GenTaskBarIcon() {
 
 }

@@ -181,6 +181,9 @@
 
 <script setup>
 import { getInfo } from '@/api/cpu'
+import { onMounted, onActivated, onDeactivated, onUnmounted } from 'vue';
+
+let timer
 
 const server = ref([])
 const { proxy } = getCurrentInstance()
@@ -197,12 +200,30 @@ function getList(isInit) {
 
 function fixNum(num) {
   if (!num || isNaN(num) || Number.isInteger(num)) return num
-  return parseFloat(num).toFixed(2)
+  return parseFloat(parseFloat(num).toFixed(2))
 }
 
-setInterval(() => {
-  getList()
-}, 5000)
+onMounted(() => startTimer())
+
+onActivated(() => startTimer())
+
+onUnmounted(() => clearTimer())
+
+onDeactivated(() => clearTimer())
+
+function clearTimer() {
+  console.log('clearTimer...');
+  clearInterval(timer)
+  timer = null
+}
+
+function startTimer() {
+  console.log('startTimer...');
+  clearInterval(timer)
+  timer = setInterval(() => {
+    getList()
+  }, 5000)
+}
 
 getList(true);
 </script>

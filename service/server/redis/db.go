@@ -128,3 +128,25 @@ func getRedisInfo(db *redis.Client) map[string]interface{} {
 
 	return result
 }
+
+func getKeyLen(val string) int {
+	// 使用 SCAN 命令进行键的统计
+	ctx := context.Background()
+	var cursor uint64 = 0
+	var count int
+	for {
+		keys, nextCursor, err := rdb.Scan(ctx, cursor, val+"*", 10).Result()
+		if err != nil {
+			fmt.Println("Error getKeyLen:", err)
+			return 0
+		}
+		count += len(keys)
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+
+	fmt.Printf("getKeyLen Total keys count: %d\n", count)
+	return count
+}

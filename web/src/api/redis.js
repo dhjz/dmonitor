@@ -1,9 +1,10 @@
 import request from '@/utils/request'
 
-export const listKey = () => {
+export const listKey = (params) => {
   return request({
     url: '/redis/listKey',
-    method: 'get'
+    method: 'get',
+    params
   })
 }
 

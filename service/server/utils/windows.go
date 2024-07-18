@@ -5,6 +5,7 @@ package utils
 import (
 	"dmonitor/server/base"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -33,6 +34,32 @@ func GetCmdOutput(cmd *exec.Cmd, isCombine bool) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+func OpenBrowser(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default: // Linux 等其他 Unix-like 系统
+		// cmd = "xdg-open"
+		cmd = ""
+	}
+	if cmd == "" {
+		return nil
+	}
+
+	args = append(args, url)
+	ec := exec.Command(cmd, args...)
+	if runtime.GOOS == "windows" {
+		ec.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	}
+	return ec.Start()
+}
+
 func GenTaskBarIcon() {
 	if runtime.GOOS == "windows" {
 		systray.Run(onReady, onExit)
@@ -54,6 +81,7 @@ func onReady() {
 				OpenBrowser(fmt.Sprintf("http://localhost:%d/", base.RunPort))
 			case <-menuQuit.ClickedCh:
 				systray.Quit()
+				os.Exit(0)
 			}
 		}
 	}()

@@ -12,6 +12,7 @@ import (
 	"os"
 	"runtime"
 	"sort"
+	"time"
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -161,7 +162,10 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		sysInfo.OsName = info.OS + ", " + info.Platform + ", " + info.PlatformFamily + ", " + info.PlatformVersion + ", " + info.KernelArch
 	}
 	// 获取公网ip
-	resp, err := http.Get("http://ip.3322.net")
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Get("http://ip.3322.net")
 	if err != nil {
 		fmt.Println("无法访问 ifconfig.me:", err)
 	} else {
@@ -251,8 +255,8 @@ func main() {
 	flag.Parse()
 	addr := fmt.Sprintf(":%d", *port)
 
-	http.HandleFunc("/api/info", getInfoHandler)
-	http.HandleFunc("/api/redis/", redis.HandleApi)
+	http.HandleFunc("/monitor-api/info", getInfoHandler)
+	http.HandleFunc("/monitor-api/redis/", redis.HandleApi)
 	// 定义静态文件目录
 	// staticDir := "./webapp"
 	// staticDir := fmt.Sprintf("%s", *dir)
@@ -302,10 +306,15 @@ func main() {
 	fmt.Printf("***********************app run on http://localhost:%d/ *******************", *port)
 	fmt.Println("")
 
+	utils.OpenBrowser(fmt.Sprintf("http://localhost:%d/", *port))
 	go func() {
-		utils.OpenBrowser(fmt.Sprintf("http://localhost:%d/", *port))
-		http.ListenAndServe(addr, nil)
+		utils.GenTaskBarIcon()
 	}()
 
-	utils.GenTaskBarIcon()
+	fmt.Println("start http.... ", *port)
+	err := http.ListenAndServe(addr, nil)
+	if err != nil {
+		fmt.Println("start http error: ", err)
+	}
+	fmt.Println("start http success ", *port)
 }

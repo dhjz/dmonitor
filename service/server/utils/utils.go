@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -22,28 +21,6 @@ func FormatBytes(bytes uint64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
-}
-
-func OpenBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // Linux 等其他 Unix-like 系统
-		// cmd = "xdg-open"
-		cmd = ""
-	}
-	if cmd == "" {
-		return nil
-	}
-
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
 }
 
 func GetOpenTime() (string, string) {

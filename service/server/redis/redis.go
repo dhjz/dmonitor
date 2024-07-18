@@ -94,7 +94,13 @@ func initRedis(w http.ResponseWriter, r *http.Request) {
 
 func listKey(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	keys, err := rdb.Keys(ctx, "*").Result()
+	keyword := r.URL.Query().Get("keyword")
+	keylen := getKeyLen(keyword)
+	if keylen > 2000 {
+		base.R(w).FailMsg(fmt.Sprintf("结果 %d 个, 超过了2000个key, 请输入更多关键字查询结果", keylen))
+		return
+	}
+	keys, err := rdb.Keys(ctx, keyword+"*").Result()
 	if err != nil {
 		base.R(w).Ok([]string{})
 		return
