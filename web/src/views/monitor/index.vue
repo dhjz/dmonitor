@@ -179,6 +179,7 @@
         </el-card>
       </el-col>
     </el-row>
+    <div style="text-align: center; font-size: 13px; color: #999;"><a href="https://github.com/dhjz/dmonitor" target="_blank">@dhjz/dmonitor</a></div>
     <FloatMenu />
   </div>
 </template>
