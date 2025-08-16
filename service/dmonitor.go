@@ -228,10 +228,10 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(processes)
 	topProcesses := processes[:20]
-	fmt.Println("Rank\tPath\tMemory")
-	for i, p := range topProcesses {
-		fmt.Printf("%d\t%s\t%.2f \t%s\n", i+1, p.Path, p.Mem, p.MemFormat)
-	}
+	// fmt.Println("Rank\tPath\tMemory")
+	// for i, p := range topProcesses {
+	// 	fmt.Printf("%d\t%s\t%.2f \t%s\n", i+1, p.Path, p.Mem, p.MemFormat)
+	// }
 
 	data := make(map[string]interface{})
 	data["cpu"] = cpuInfo

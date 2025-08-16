@@ -218,11 +218,12 @@ function clearTimer() {
 }
 
 function startTimer() {
+  let btime = localStorage.getItem('refreshTime') || 10;
   console.log('startTimer...');
   clearInterval(timer)
   timer = setInterval(() => {
     getList()
-  }, 5000)
+  }, parseInt(btime) * 1000)
 }
 
 getList(true);

@@ -55,6 +55,10 @@ func GetJavaInfo() (string, string) {
 	}
 
 	outputStr, _ := GetCmdOutput(exec.Command("java", "-version"), true)
+	if outputStr == "" {
+		return javaVersionTemp, javaPathTemp
+	}
+
 	lines := strings.Split(outputStr, "\n")
 	versionLine := strings.TrimPrefix(strings.TrimSpace(lines[0]), "java version ")
 	javaVersion := strings.Split(versionLine, "\"")[1]
