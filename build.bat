@@ -35,7 +35,7 @@ exit
 
 :buildService
 cd service
-rmdir /S /Q .\app
+rmdir /S /Q .\webapp
 xcopy /E /Y "..\web\dist\*" ".\webapp\"
 @REM go env -w GOOS=linux
 @REM go build -ldflags "-s -w" -o ./dist/
