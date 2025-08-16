@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-row>
-      <el-col :span="12" class="card-box">
+      <el-col :span="12" :xs="24" class="card-box">
         <el-card>
           <template #header><Cpu style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">CPU</span></template>
           <div class="el-table el-table--enable-row-hover el-table--medium">
@@ -35,7 +35,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="12" class="card-box">
+      <el-col :span="12" :xs="24" class="card-box">
         <el-card>
           <template #header><Tickets style="width: 1em; height: 1em; vertical-align: middle;" /> <span style="vertical-align: middle;">内存</span></template>
           <div class="el-table el-table--enable-row-hover el-table--medium">
@@ -93,6 +93,10 @@
                   <td class="el-table__cell is-leaf"><div class="cell" v-if="server.sys">{{ server.sys.computerIp }}</div></td>
                   <td class="el-table__cell is-leaf"><div class="cell">系统架构</div></td>
                   <td class="el-table__cell is-leaf"><div class="cell" v-if="server.sys">{{ server.sys.osArch }}</div></td>
+                </tr>
+                <tr>
+                  <td class="el-table__cell is-leaf"><div class="cell">系统温度</div></td>
+                  <td class="el-table__cell is-leaf" colspan="3"><div class="cell" v-if="server.sys">{{ server.sys.temp || '--' }} ℃</div></td>
                 </tr>
               </tbody>
             </table>

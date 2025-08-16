@@ -56,6 +56,7 @@ type SysInfo struct {
 	JavaPath     string `json:"javaPath"`
 	NodeVersion  string `json:"nodeVersion"`
 	NodePath     string `json:"nodePath"`
+	Temp         string `json:"temp"`
 }
 
 type DiskInfo struct {
@@ -138,6 +139,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	javaVersion, javaPath := utils.GetJavaInfo()
 	nodeVersion, nodePath := utils.GetNodeInfo()
 	startTime, uptime := utils.GetOpenTime()
+	temp := utils.GetTemperature()
 	sysInfo := SysInfo{
 		// ComputerIp: os.Hostname(),
 		OsArch:      runtime.GOARCH,
@@ -148,6 +150,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 		JavaPath:    javaPath,
 		NodeVersion: nodeVersion,
 		NodePath:    nodePath,
+		Temp:        temp,
 	}
 	hostname, err := os.Hostname()
 	if err != nil {

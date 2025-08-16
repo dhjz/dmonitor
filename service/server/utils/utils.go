@@ -48,6 +48,7 @@ var javaVersionTemp string
 var javaPathTemp string
 var nodeVersionTemp string
 var nodePathTemp string
+var tempTemp string
 
 func GetJavaInfo() (string, string) {
 	if javaVersionTemp != "" {
@@ -78,9 +79,28 @@ func GetNodeInfo() (string, string) {
 
 	nodeVersion, _ := GetCmdOutput(exec.Command("node", "--version"), false)
 	nodePath, _ := GetCmdOutput(exec.Command("which", "node"), false)
+	if nodeVersion == "" {
+		nodeVersion, _ = GetCmdOutput(exec.Command("sh", "-c", "node --version"), true)
+		nodePath, _ = GetCmdOutput(exec.Command("sh", "-c", "which node"), true)
+	}
 
 	nodeVersionTemp = nodeVersion
 	nodePathTemp = nodePath
 
 	return nodeVersionTemp, nodePathTemp
+}
+
+func GetTemperature() string {
+	if tempTemp != "" {
+		return tempTemp
+	}
+
+	temp, _ := GetCmdOutput(exec.Command("sh", "-c", "grep Tsensor /proc/msp/pm_cpu | awk '{print $4}'"), true)
+	if temp == "" {
+		temp, _ = GetCmdOutput(exec.Command("sh", "-c", "cat /sys/class/thermal/thermal_zone0/temp | cut -b 1-2"), true)
+	}
+
+	tempTemp = temp
+
+	return tempTemp
 }
