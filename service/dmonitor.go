@@ -166,7 +166,7 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// 获取公网ip
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: 3 * time.Second,
 	}
 	resp, err := client.Get("http://ip.3322.net")
 	if err != nil {
@@ -230,7 +230,11 @@ func getInfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sort.Sort(processes)
-	topProcesses := processes[:20]
+	len := len(processes)
+	if len > 20 {
+		len = 20
+	}
+	topProcesses := processes[:len]
 	// fmt.Println("Rank\tPath\tMemory")
 	// for i, p := range topProcesses {
 	// 	fmt.Printf("%d\t%s\t%.2f \t%s\n", i+1, p.Path, p.Mem, p.MemFormat)
